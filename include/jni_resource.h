@@ -96,13 +96,15 @@ public:
    // the corresponding resource allocation function.
    template<class T>
    JavaType operator() (JNIEnv *env, T arg, const char *name) const {
-	  return (*this)(env, arg, name, ObjectTag<T>::tag());
+     typename ObjectTag<T>::tag tag;
+	  return (*this)(env, arg, name, tag);
    }
 
    template<class T>
    JavaType operator() (JNIEnv *env, T arg, const char *name,
 						bool isStatic) const {
-	  return (*this)(env, arg, name, ObjectTag<T>::tag(), isStatic);
+     typename ObjectTag<T>::tag tag;
+	  return (*this)(env, arg, name, tag, isStatic);
    }
 };
 
@@ -133,7 +135,7 @@ struct JNIStringCharsSettings {
    };
 
    // Releasing string characters: ReleaseF uses ReleaseStringChars()
-   typedef struct ReleaseF {
+   struct ReleaseF {
       void operator() (JNIEnv *env, JResource jstr, Resource str) const {
          if (jstr != 0)
 		    env->ReleaseStringChars(jstr, str);
@@ -306,10 +308,10 @@ public:
 	  ReleaseResource(_settings::ReleaseF(mode));
    }
 
-   NativeType &operator[] (int i) { return _resource[i]; }
-   const NativeType &operator[] (int i) const { return _resource[i]; }
+   NativeType &operator[] (int i) { return this->_resource[i]; }
+   const NativeType &operator[] (int i) const { return this->_resource[i]; }
 
-   const int size() const { return _env->GetArrayLength(_jresource); }
+   const int size() const { return this->_env->GetArrayLength(this->_jresource); }
 };
 
 /*-----------------------------------------------------------------------------
@@ -324,18 +326,20 @@ public:
  * 'jni_preprocessor.cpp'.
  *---------------------------------------------------------------------------*/
 
-#define JNI_ARRAY_SETTINGS(Type)											  \
-inline NATIVE_TYPE(Type) *													  \
-JNIArraySettings<NATIVE_TYPE(Type)>::GetF::operator()	      				  \
-   (JNIEnv *env, ARRAY_TYPE(Type) array) const {							  \
+#define JNI_ARRAY_SETTINGS(Type)                                              \
+template<>                                                                    \
+inline NATIVE_TYPE(Type) *                                                    \
+JNIArraySettings<NATIVE_TYPE(Type)>::GetF::operator()                         \
+   (JNIEnv *env, ARRAY_TYPE(Type) array) const {                              \
    return (array == 0) ? 0 : env->Get##Type##ArrayElements(array, _isCopy);   \
-}																			  \
-																			  \
-inline void																	  \
-JNIArraySettings<NATIVE_TYPE(Type)>::ReleaseF::operator()   				  \
+}                                                                             \
+                                                                              \
+template<>                                                                    \
+inline void                                                                   \
+JNIArraySettings<NATIVE_TYPE(Type)>::ReleaseF::operator()                     \
 (JNIEnv *env, ARRAY_TYPE(Type) array, NATIVE_TYPE(Type) *nativeArray) const { \
    if (array != 0)                                                            \
-      env->Release##Type##ArrayElements(array, nativeArray, _mode);			  \
+      env->Release##Type##ArrayElements(array, nativeArray, _mode);           \
 }
    
 /*-----------------------------------------------------------------------------
@@ -410,6 +414,7 @@ struct JNIGlobalRefSettings {
    // releasing a global reference: DefaultReleaseF uses DeleteGlobalRef
    struct ReleaseF {
       void operator() (JNIEnv *env, JResource obj, Resource ref) const {
+       //std::cout << "Deleting ref: " << ref << std::endl;
 		 env->DeleteGlobalRef(ref);
       }
    };
@@ -428,9 +433,9 @@ public:
    // friend bool operator== (const JNIGlobalRef &x, const JNIGlobalRef &y)
    // passes compilation with g++, but fails for VC++.
    bool operator== (const JNIGlobalRef<T> &x) {
-	  if (_env != x._env)
+	  if (this->_env != x._env)
 		 return false;
-	  return (_env->IsSameObject(_resource, x._resource) != JNI_FALSE);
+	  return (this->_env->IsSameObject(this->_resource, x._resource) != JNI_FALSE);
    }
 };
 

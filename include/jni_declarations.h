@@ -20,9 +20,9 @@ public:
    JNIException(const string &msg = "Unknown exception") : _msg(msg) {}
    JNIException(const char *msg) : _msg(msg) {}
 
-   virtual ~JNIException() {}
+   virtual ~JNIException() throw() {}
 
-   virtual const char *what() const { return _msg.c_str(); }
+   virtual const char *what() const throw() { return _msg.c_str(); }
 };
 
 /*---------------------------------------------------------------------------
