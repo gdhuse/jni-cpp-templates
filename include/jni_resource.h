@@ -85,7 +85,7 @@ class GetJResource {
    JavaType operator() (JNIEnv *env, T protoClass, const char *name,
 						const non_object_tag &, bool isStatic) const {
 	  if (!isStatic)
-		 throw JNIException("Ambiguos attempt to construct a field");
+		 throw JNIException("Ambiguous attempt to construct a field");
 	  else
 		 return JNIStaticField<JavaType>(env, protoClass, name);
    }
@@ -166,7 +166,10 @@ public:
 	  _super(env, GetJResource<jstring>()(env, arg, name, isStatic)) {}
 
    const jchar &operator[] (int i) const { return _resource[i]; }
-   const int length() const { return _env->GetStringLength(_jresource); }
+   const int length() const { 
+      JNIEnvironment env(_vm);
+      return env.Get()->GetStringLength(_jresource); 
+   }
 };
 
 /*-----------------------------------------------------------------------------
@@ -230,7 +233,10 @@ public:
 	  _super(env, GetJResource<jstring>()(env, arg, name, isStatic)) {}
 
    const char &operator[] (int i) const { return _resource[i]; }
-   const int length() const { return _env->GetStringUTFLength(_jresource); }
+   const int length() const { 
+      JNIEnvironment env(_vm);
+      return env.Get()->GetStringUTFLength(_jresource); 
+   }
 
    string asString() const { return string(_resource); }
 };
@@ -311,7 +317,10 @@ public:
    NativeType &operator[] (int i) { return this->_resource[i]; }
    const NativeType &operator[] (int i) const { return this->_resource[i]; }
 
-   const int size() const { return this->_env->GetArrayLength(this->_jresource); }
+   const int size() const { 
+      JNIEnvironment env(this->_vm);
+      return env.Get()->GetArrayLength(this->_jresource); 
+   }
 };
 
 /*-----------------------------------------------------------------------------
@@ -433,9 +442,11 @@ public:
    // friend bool operator== (const JNIGlobalRef &x, const JNIGlobalRef &y)
    // passes compilation with g++, but fails for VC++.
    bool operator== (const JNIGlobalRef<T> &x) {
-	  if (this->_env != x._env)
+	  if (this->_vm != x._vm)
 		 return false;
-	  return (this->_env->IsSameObject(this->_resource, x._resource) != JNI_FALSE);
+
+     JNIEnvironment env(this->_vm);
+	  return (env.Get()->IsSameObject(this->_resource, x._resource) != JNI_FALSE);
    }
 };
 

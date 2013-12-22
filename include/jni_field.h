@@ -19,6 +19,7 @@
 
 #include "jni_declarations.h"
 #include "jni_class.h"
+#include "jni_env.h"
 
 /*-----------------------------------------------------------------------------
  * JNIGenericFieldId represents a structure common for both regular and static
@@ -26,11 +27,12 @@
  *---------------------------------------------------------------------------*/
 class JNIGenericFieldId {
 protected:
-   JNIEnv *_env;  // Environment handle for subsequent field manipulation
+   JavaVM *_vm;   // Associated JVM
    jfieldID _id;  // Field ID
 
 protected:
-   JNIGenericFieldId(JNIEnv *env, jfieldID id) : _env(env), _id(id) {
+   JNIGenericFieldId(JNIEnv *env, jfieldID id) : _id(id) {
+     env->GetJavaVM(&_vm);
 	  if (_id == 0)
 		 throw JNIException("Field not found");
    }
@@ -59,10 +61,12 @@ public:
 
    // Get and Set utilities
    JavaType Get(jobject obj) const {
-	  return static_cast<JavaType>(_env->GetObjectField(obj, _id));
+     JNIEnvironment env(_vm);
+	  return static_cast<JavaType>(env.Get()->GetObjectField(obj, _id));
    }
    void Set(jobject obj, JavaType val) {
-	  _env->SetObjectField(obj, _id, val);
+      JNIEnvironment env(_vm);
+	   env.Get()->SetObjectField(obj, _id, val);
    }
 };
 
@@ -76,21 +80,23 @@ public:
  * to the 'jint' native type) is given in file 'jni_preprocessor.cpp'.
  *---------------------------------------------------------------------------*/
 
-#define JNI_FIELD_ID_METHODS(Type)											\
-template<> class JNIFieldId<NATIVE_TYPE(Type)> : public JNIGenericFieldId 	\
-{																			\
-public:																		\
-   template<class T>														\
-   JNIFieldId(JNIEnv *env, T protoClass, const char *name) :				\
-	  JNIGenericFieldId(env, env->GetFieldID(JNIClass(env, protoClass),		\
-											 name, SIGNATURE(Type))) {}		\
-																			\
-   NATIVE_TYPE(Type) Get(jobject obj) const {								\
-      return _env->Get##Type##Field(obj, _id);								\
-   }																		\
-   void Set(jobject obj, NATIVE_TYPE(Type) val) {							\
-      _env->Set##Type##Field(obj, _id, val);								\
-   }																		\
+#define JNI_FIELD_ID_METHODS(Type)                                         \
+template<> class JNIFieldId<NATIVE_TYPE(Type)> : public JNIGenericFieldId  \
+{                                                                          \
+public:                                                                    \
+   template<class T>                                                       \
+   JNIFieldId(JNIEnv *env, T protoClass, const char *name) :               \
+	  JNIGenericFieldId(env, env->GetFieldID(JNIClass(env, protoClass),     \
+											 name, SIGNATURE(Type))) {}               \
+                                                                           \
+   NATIVE_TYPE(Type) Get(jobject obj) const {                              \
+      JNIEnvironment env(_vm);                                             \
+      return env.Get()->Get##Type##Field(obj, _id);                        \
+   }                                                                       \
+   void Set(jobject obj, NATIVE_TYPE(Type) val) {                          \
+      JNIEnvironment env(_vm);                                             \
+      env.Get()->Set##Type##Field(obj, _id, val);                          \
+   }                                                                       \
 };
 
 /*-----------------------------------------------------------------------------
@@ -119,10 +125,12 @@ public:
 
    // Get and Set utilities
    JavaType Get(jclass clazz) const {
-	  return static_cast<JavaType>(_env->GetStaticObjectField(clazz, _id));
+     JNIEnvironment env(_vm);
+	  return static_cast<JavaType>(env.Get()->GetStaticObjectField(clazz, _id));
    }
    void Set(jclass clazz, JavaType val) {
-	  _env->SetStaticObjectField(clazz, _id, val);
+     JNIEnvironment env(_vm);
+	  env.Get()->SetStaticObjectField(clazz, _id, val);
    }
 };
 
@@ -147,10 +155,12 @@ public:																		\
 											  name, SIGNATURE(Type))) {}	\
 																			\
    NATIVE_TYPE(Type) Get(jclass clazz) const {								\
-      return _env->GetStatic##Type##Field(clazz, _id);						\
+      JNIEnvironment env(_vm);                                              \
+      return env.Get()->GetStatic##Type##Field(clazz, _id);					\
    }																		\
    void Set(jclass clazz, NATIVE_TYPE(Type) val) {							\
-      _env->SetStatic##Type##Field(clazz, _id, val);						\
+      JNIEnvironment env(_vm);                                              \
+      env.Get()->SetStatic##Type##Field(clazz, _id, val);				    \
    }																		\
 };
 

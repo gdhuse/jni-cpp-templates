@@ -10,6 +10,7 @@
 #define _JNI_RESOURCE_BASE_H_INCLUDED_
 
 #include "jni_declarations.h"
+#include "jni_env.h"
 
 /*-----------------------------------------------------------------------------
  * JNIResource template: general resource management
@@ -52,39 +53,42 @@ private:
    bool _owns;		        // true if the current object owns the resource
    
 protected:
-   JNIEnv *_env;			// Java environment handle
+   JavaVM *_vm;	   		// Java environment handle
    JResource _jresource;	// Java resource handle
    Resource _resource;		// exported resource handle
 
 public:
 
    // Default constructor (to allow arrays of resources)
-   JNIResource() : _env(0), _jresource(0), _resource(0), _owns(0) {}
+   JNIResource() : _vm(0), _jresource(0), _resource(0), _owns(0) {}
 
    // Constructors use a functional object of the form
    //   Resource GetF::operator()(JNIEnv *, JResource)
    // for resource allocation (by default, DefaultGetF())
 
    JNIResource(JNIEnv *env, JResource jresource) :
-      _env(env), _owns(true), _jresource(jresource) {
-      _resource = DefaultGetF()(_env, _jresource);
+      _owns(true), _jresource(jresource) {
+      env->GetJavaVM(&_vm);
+      _resource = DefaultGetF()(env, _jresource);
    }
    
    template<class GetF>
    JNIResource(JNIEnv *env, JResource jresource, GetF &getF) :
-      _env(env), _owns(true), _jresource(jresource) {
-      _resource = getF(_env, _jresource);
+      _owns(true), _jresource(jresource) {
+      env->GetJavaVM(&_vm);
+      _resource = getF(env, _jresource);
    }
    
    template<class GetF>
    JNIResource(JNIEnv *env, JResource jresource, const GetF &getF) :
-      _env(env), _owns(true), _jresource(jresource) {
-      _resource = getF(_env, _jresource);
+      _owns(true), _jresource(jresource) {
+      env->GetJavaVM(&_vm);
+      _resource = getF(env, _jresource);
    }
 
    // Copy constructor
    JNIResource(const _self &x) :
-	  _env(x._env), _owns(x._owns),
+	  _vm(x._vm), _owns(x._owns),
 	  _jresource(x._jresource), _resource(x.release())
    {}
    
@@ -94,7 +98,7 @@ public:
 		 if (_owns)
 			ReleaseResource();
       
-		 _env = x._env;
+		 _vm = x._vm;
 		 _owns = x._owns;
 		 _jresource = x._jresource;
 		 _resource = x.release();
@@ -105,30 +109,36 @@ public:
 
    // Destructor: calls the default ReleaseResource()
    ~JNIResource() {
-	  ReleaseResource();
+     try {
+        JNIEnvironment env(_vm);
+        ReleaseResource(env); 
+     }
+     catch(JNIException &e) {
+         // Unable to release resources, most likely because the JVM has exited
+     }     
    }
 
    // ReleaseResource methods use a functional object of the form
    //   void ReleaseF::operator()(JNIEnv *, JResource, Resource)
    // for resource deallocation (by default, DefaultReleaseF())
    
-   void ReleaseResource() {
+   void ReleaseResource(JNIEnv *env) {
       if (_owns) {
-		 DefaultReleaseF()(_env, _jresource, release());
+		 DefaultReleaseF()(env, _jresource, release());
 	  }
    }
    
    template<class ReleaseF>
-   void ReleaseResource(ReleaseF &releaseF) {
+   void ReleaseResource(JNIEnv *env, ReleaseF &releaseF) {
       if (_owns) {
-		 releaseF(_env, _jresource, release());
+		 releaseF(env, _jresource, release());
 	  }
    }
    
    template<class ReleaseF>
-   void ReleaseResource(const ReleaseF &releaseF) {
+   void ReleaseResource(JNIEnv *env, const ReleaseF &releaseF) {
       if (_owns) {
-		 releaseF(_env, _jresource, release());
+		 releaseF(env, _jresource, release());
 	  }
    }
    

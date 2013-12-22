@@ -155,7 +155,7 @@ JNIEXPORT void JNICALL Java_JniComplexExample_init_1native_1resources
 JNIEXPORT void JNICALL Java_JniComplexExample_clean_1native_1resources
   (JNIEnv *, jclass)
 {
-   SampleContainer::clean();   
+   SampleContainer::clean();
 }
 
 // Inserting an object
