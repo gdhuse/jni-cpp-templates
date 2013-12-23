@@ -5,3 +5,7 @@
 *.so
 
 examples/macos/*.h
+
+examples/android/*.h
+examples/android/obj
+examples/android/libs

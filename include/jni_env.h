@@ -24,7 +24,11 @@ public:
    JNIEnvironment(JavaVM *vm) : _vm(vm), _attached(false) {
       int state = vm->GetEnv((void **)&_env, JNI_VERSION);
       if(state == JNI_EDETACHED) {
+#ifdef __ANDROID__
+         if(vm->AttachCurrentThread(&_env, NULL) != 0) {
+#else
          if(vm->AttachCurrentThread((void **)&_env, NULL) != 0) {
+#endif
             throw JNIException("Failed to attach JNIEnv to Java VM");
          }
          else {

@@ -16,8 +16,10 @@ The article referenced above includes numerous usage examples.  For code samples
 
 ### Tested Compilers:
  - clang (5.0)
+ - gcc (4.6, 4.8)
  - Should build with any modern C++ compiler
 
 ### Tested Platforms:
   - OSX ([example](examples/macos))
+  - Android NDK ([example](examples/android))
   - Should build with minor modifications on any platform supporting JDK 1.2+
