@@ -75,8 +75,8 @@ struct IntDeclarations {
 struct LongDeclarations {
    typedef jlong NativeType;
    typedef jlongArray ArrayType;
-   static const char *signature() { return "L"; }
-   static const char *array_signature() { return "[L"; }
+   static const char *signature() { return "J"; }
+   static const char *array_signature() { return "[J"; }
 };
 
 struct FloatDeclarations {

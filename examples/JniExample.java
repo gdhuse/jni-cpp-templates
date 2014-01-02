@@ -8,6 +8,7 @@ import java.io.*;
 
 public class JniExample {
    public int intField = 17;		   					// integer field
+   public long longField = 23;							// long field
    public static String stringField = "Hello, world!";  // static String field
    public int[] intArray = new int[2];			   		// integer array
 
@@ -34,6 +35,7 @@ public class JniExample {
 	  // print old values
 	  System.out.println("Before native call:");
 	  System.out.println("  intField = " + x.intField +
+	  					 ", longField = " + x.longField +
 						 ", stringField = " + x.stringField);
 	  System.out.println("  intArray[0] = " + x.intArray[0] +
 						 ", intArray[1] = " + x.intArray[1]);
@@ -51,6 +53,7 @@ public class JniExample {
 	  // print new values
 	  System.out.println("After native call:");
 	  System.out.println("  intField = " + x.intField +
+	  					 ", longField = " + x.longField +
 						 ", stringField = " + x.stringField);
 	  System.out.println("  intArray[0] = " + x.intArray[0] +
 						 ", intArray[1] = " + x.intArray[1]);

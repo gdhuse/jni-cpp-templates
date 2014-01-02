@@ -25,6 +25,9 @@ JNIEXPORT void JNICALL Java_JniExample_native_1call
 	  // Lookup the integer field ('intField') in 'obj'
 	  JNIField<jint> intField(env, obj, "intField");
 
+	  // Same with longField
+	  JNIField<jlong> longField(env, obj, "longField");	  
+
 	  // Lookup the static String field ('stringField') in 'obj', 
 	  // then translate the Java string representation into
 	  // a C++ resource of type 'const char *'.
@@ -37,12 +40,14 @@ JNIEXPORT void JNICALL Java_JniExample_native_1call
 	  // Print old values
 	  cout << "In native call:" << endl
 		   << "  intField = " << intField
+		   << ", longField = " << longField
 		   << ", stringField = " << str.get() << endl
 		   << "  intArray[0] = " << arr[0]
 		   << ", intArray[1] = " << arr[1] << endl;
 
 	  // Set new values 
 	  intField = 0;
+	  longField = 0;
 	  arr[0] = 0;
 	  arr[1] = 0;
 
