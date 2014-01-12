@@ -11,4 +11,8 @@
 #include "jni_resource.h"
 #include "jni_env.h"
 
+#ifdef __ANDROID__
+#include "jni_android.h"
+#endif
+
 #endif /* _JNI_MASTER_H_INCLUDED_ */
